@@ -49,20 +49,22 @@ def construct_model(nlayers=2, optimizer="sgd"):
     for i in range(nlayers):
         model.add(
             Dense(
-                state_dim * 2, init='lecun_uniform',
-                input_dim=state_dim*2 if i == 0 else None
+                output_dim=state_dim * 2 * 10,
+                init='lecun_uniform',
+                input_dim=state_dim * 2 if i == 0 else None
             )
         )
         model.add(Activation('relu'))
         # model.add(Dropout(0.5))
     model.add(Dense(3, init='lecun_uniform'))
     model.add(Activation('softmax'))
-    # sgd = SGD(lr=0.1, decay=0, momentum=0.1, nesterov=True)
     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
     return model
 
-model0 = construct_model(5, optimizer="sgd")
+# sgd = SGD(lr=0.1, decay=0, momentum=0.1, nesterov=True)
+model0 = construct_model(2, optimizer="sgd")
 model0.fit(
     X_train, y_train, nb_epoch=200,
-    validation_data=(X_test, y_test)
+    validation_data=(X_test, y_test),
+    show_accuracy=True,
 )
