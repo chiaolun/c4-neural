@@ -55,17 +55,10 @@ def construct_model(nlayers=2, optimizer="sgd"):
         )
         model.add(Activation('relu'))
         # model.add(Dropout(0.5))
-
-    model.add(
-        Dense(3, init='lecun_uniform')
-    )
-    model.add(
-        Activation('softmax')
-    )
-
+    model.add(Dense(3, init='lecun_uniform'))
+    model.add(Activation('softmax'))
     # sgd = SGD(lr=0.1, decay=0, momentum=0.1, nesterov=True)
     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
-
     return model
 
 model0 = construct_model(5, optimizer="sgd")
