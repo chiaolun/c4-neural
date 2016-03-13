@@ -44,12 +44,12 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 
-def construct_model(nlayers=2, optimizer="sgd"):
+def construct_model(nlayers, optimizer="sgd"):
     model = Sequential()
     for i in range(nlayers):
         model.add(
             Dense(
-                output_dim=state_dim * 2 * 10,
+                output_dim=state_dim * 2,
                 init='lecun_uniform',
                 input_dim=state_dim * 2 if i == 0 else None
             )
