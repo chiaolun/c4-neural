@@ -32,13 +32,13 @@ def moves_to_state(moves):
     return state0
 
 
-def construct_model(layers, optimizer, activation, dropout):
+def construct_model(layers, optimizer, activation):
     model = Sequential()
     for layer0 in layers:
         model.add(layer0)
         model.add(Activation(activation))
-        if dropout:
-            model.add(Dropout(dropout))
+        # if dropout:
+        #     model.add(Dropout(dropout))
     model.add(Dense(3, init='lecun_uniform'))
     model.add(Activation('softmax'))
     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
@@ -86,7 +86,6 @@ optimizers = ["sgd", "adam", "adadelta"]
 activations = ["relu", "tanh"]
 nlayers = [1, 3, 5, 8, 10]
 trainsizes = [1000, 10000, 100000]
-dropouts = [None, 0.1, 0.5]
 flats = [True, False]
 
 games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
@@ -110,14 +109,12 @@ for ncensor0 in ncensors:
     for (
             optimizer0,
             activation0,
-            dropout0,
             nlayer0,
             flat0,
             trainsize0
     ) in itertools.product(
         optimizers,
         activations,
-        dropouts,
         nlayers,
         flats,
         trainsizes
@@ -126,7 +123,6 @@ for ncensor0 in ncensors:
             ncensor=ncensor0,
             optimizer=optimizer0,
             activation=activation0,
-            dropout=dropout0,
             nlayer=nlayer0,
             flat=flat0,
             trainsize=trainsize0,
@@ -141,7 +137,6 @@ for ncensor0 in ncensors:
             layers,
             optimizer=optimizer0,
             activation=activation0,
-            dropout=dropout0,
         )
         start_time = time.time()
         data0 = model0.fit(
