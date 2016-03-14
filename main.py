@@ -7,6 +7,7 @@ import numpy as np
 import itertools
 from sklearn.cross_validation import train_test_split
 import cPickle
+import time
 
 ncols = 7
 nrows = 6
@@ -142,6 +143,7 @@ for ncensor0 in ncensors:
             activation=activation0,
             dropout=dropout0,
         )
+        start_time = time.time()
         data0 = model0.fit(
             X_train[:trainsize0],
             y_train[:trainsize0],
@@ -151,5 +153,6 @@ for ncensor0 in ncensors:
             show_accuracy=True,
             callbacks=[EarlyStopping(patience=10)],
         ).history
+        data0["time_taken"] = time.time() - start_time
         results[tuple(sorted(params0.items()))] = data0
         cPickle.dump(results, file("results.pickle", "w"))
