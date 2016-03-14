@@ -5,7 +5,7 @@ from keras.layers.core import Dense, Activation, Dropout
 import numpy as np
 import itertools
 from sklearn.cross_validation import train_test_split
-import shelve
+import cPickle
 
 ncols = 7
 nrows = 6
@@ -44,7 +44,7 @@ def construct_model(layers, optimizer, activation, dropout):
 
 
 def censor_data(ncensor):
-    censor = np.random.randint(0, ncensor - 1, len(X_raw))
+    censor = np.random.randint(0, ncensor + 1, len(X_raw))
     X_all = np.array([moves_to_state(moves0[:(-n if n > 0 else None)])
                       for n, moves0 in zip(censor, X_raw)])
     # X_all = np.array([moves_to_state(moves0) for moves0 in X_raw])
@@ -54,7 +54,7 @@ def censor_data(ncensor):
         X_train,
         X_test,
         y_train,
-        X_train,
+        y_test,
         censor_train,
         censor_test
     ) = train_test_split(
@@ -87,7 +87,11 @@ nlayers = [1, 3, 5, 8, 10]
 trainsizes = [1000, 10000, 100000]
 dropouts = [None, 0.1, 0.5]
 
-results = shelve.open("results.shelf")
+results = {}
+try:
+    results = cPickle.load(file("results.pickle", "w"))
+except:
+    pass
 
 for ncensor0 in ncensors:
     (
@@ -111,6 +115,19 @@ for ncensor0 in ncensors:
         nlayers,
         trainsizes
     ):
+        params0 = dict(
+            ncensor=ncensor0,
+            optimizer=optimizer0,
+            activation=activation0,
+            dropout=dropout0,
+            nlayer=nlayer0,
+            trainsize=trainsize0,
+        )
+        if tuple(sorted(params0.items())) in results:
+            print "Skipping params {}".format(params0)
+            continue
+        print "Testing params {}".format(params0)
+
         layers = linear_layers(nlayer0)
         model0 = construct_model(
             layers,
@@ -121,16 +138,10 @@ for ncensor0 in ncensors:
         data0 = model0.fit(
             X_train[:trainsize0],
             y_train[:trainsize0],
+            batch_size=128,
             nb_epoch=100,
             validation_data=(X_test, y_test),
             show_accuracy=True,
         ).history
-        results[dict(
-            ncensor=ncensor0,
-            optimizer=optimizer0,
-            activation=activation0,
-            dropout=dropout0,
-            nlayer=nlayer0,
-            trainsize=trainsize0,
-        )] = data0
-        results.sync()
+        results[tuple(sorted(params0.items()))] = data0
+        cPickle.dump(results, file("results.pickle", "w"))
