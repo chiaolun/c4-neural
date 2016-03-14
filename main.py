@@ -2,6 +2,7 @@
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Dropout
+from keras.callbacks import EarlyStopping
 import numpy as np
 import itertools
 from sklearn.cross_validation import train_test_split
@@ -145,9 +146,10 @@ for ncensor0 in ncensors:
             X_train[:trainsize0],
             y_train[:trainsize0],
             batch_size=128,
-            nb_epoch=1000000 // trainsize0,
+            nb_epoch=10000000 // trainsize0,
             validation_data=(X_test, y_test),
             show_accuracy=True,
+            callbacks=[EarlyStopping(patience=10)],
         ).history
         results[tuple(sorted(params0.items()))] = data0
         cPickle.dump(results, file("results.pickle", "w"))
