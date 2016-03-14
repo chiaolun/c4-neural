@@ -80,11 +80,6 @@ def linear_layers(n, flat):
         ) for i, n0 in enumerate(sizes[:-1])
     ]
 
-
-games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
-y_raw, X_raw = zip(*games)
-y_raw = np.array(y_raw)
-
 ncensors = [1, 2, 3, 4, 5]
 optimizers = ["sgd", "adam", "adadelta"]
 activations = ["relu", "tanh"]
@@ -93,11 +88,14 @@ trainsizes = [1000, 10000, 100000]
 dropouts = [None, 0.1, 0.5]
 flats = [True, False]
 
-results = {}
+games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
+y_raw, X_raw = zip(*games)
+y_raw = np.array(y_raw)
+
 try:
     results = cPickle.load(file("results.pickle", "w"))
 except:
-    pass
+    results = {}
 
 for ncensor0 in ncensors:
     (
