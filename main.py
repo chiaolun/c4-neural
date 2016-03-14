@@ -65,8 +65,11 @@ def censor_data(ncensor):
     return X_train, X_test, y_train, y_test, censor_train, censor_test
 
 
-def linear_layers(n):
-    sizes = np.linspace(state_dim * 2, 3, n + 1).round().astype("int")
+def linear_layers(n, flat):
+    if flat:
+        sizes = [state_dim * 2 for _ in range(n + 1)]
+    else:
+        sizes = np.linspace(state_dim * 2, 3, n + 1).round().astype("int")
     return [
         Dense(
             output_dim=n0,
@@ -86,6 +89,7 @@ activations = ["relu", "tanh"]
 nlayers = [1, 3, 5, 8, 10]
 trainsizes = [1000, 10000, 100000]
 dropouts = [None, 0.1, 0.5]
+flats = [True, False]
 
 results = {}
 try:
@@ -107,12 +111,14 @@ for ncensor0 in ncensors:
             activation0,
             dropout0,
             nlayer0,
+            flat0,
             trainsize0
     ) in itertools.product(
         optimizers,
         activations,
         dropouts,
         nlayers,
+        flats,
         trainsizes
     ):
         params0 = dict(
@@ -128,7 +134,7 @@ for ncensor0 in ncensors:
             continue
         print "Testing params {}".format(params0)
 
-        layers = linear_layers(nlayer0)
+        layers = linear_layers(nlayer0, flat=flat0)
         model0 = construct_model(
             layers,
             optimizer=optimizer0,
@@ -139,7 +145,7 @@ for ncensor0 in ncensors:
             X_train[:trainsize0],
             y_train[:trainsize0],
             batch_size=128,
-            nb_epoch=100,
+            nb_epoch=1000000 // trainsize0,
             validation_data=(X_test, y_test),
             show_accuracy=True,
         ).history
