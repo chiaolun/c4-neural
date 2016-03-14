@@ -93,7 +93,7 @@ y_raw, X_raw = zip(*games)
 y_raw = np.array(y_raw)
 
 try:
-    results = cPickle.load(file("results.pickle", "w"))
+    results = cPickle.load(file("results.pickle"))
 except:
     results = {}
 
