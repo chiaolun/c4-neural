@@ -44,11 +44,12 @@ def construct_model(layers, optimizer, activation, dropout):
     return model
 
 
-def censor_data(ncensor):
+def censor_data(ncensor, X_raw, y_raw):
     censor = np.random.randint(0, ncensor + 1, len(X_raw))
-    X_all = np.array([moves_to_state(moves0[:(-n if n > 0 else None)])
-                      for n, moves0 in zip(censor, X_raw)])
-    # X_all = np.array([moves_to_state(moves0) for moves0 in X_raw])
+    X_all = np.array([
+        moves_to_state(moves0[:(-n if n > 0 else None)])
+        for n, moves0 in zip(censor, X_raw)
+    ])
     y_all = np.array([(y_raw == i) for i in range(3)]).T * 1
 
     (
@@ -106,7 +107,7 @@ for ncensor0 in ncensors:
         y_test,
         censor_train,
         censor_test
-    ) = censor_data(ncensor0)
+    ) = censor_data(ncensor0, X_raw, y_raw)
     for (
             optimizer0,
             activation0,
