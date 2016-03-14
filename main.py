@@ -81,11 +81,11 @@ def linear_layers(n, flat):
         ) for i, n0 in enumerate(sizes[:-1])
     ]
 
-ncensors = [1, 2, 3, 4, 5]
-optimizers = ["sgd", "adam", "adadelta"]
+ncensors = [1, 3, 5]
+optimizers = ["sgd", "adam"]
 activations = ["relu", "tanh"]
-nlayers = [1, 3, 5, 8, 10]
-trainsizes = [1000, 10000, 100000]
+nlayers = [1, 5, 10]
+trainsizes = [10000, 100000, 1000000]
 flats = [True, False]
 
 games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
