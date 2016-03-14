@@ -128,6 +128,7 @@ for ncensor0 in ncensors:
             activation=activation0,
             dropout=dropout0,
             nlayer=nlayer0,
+            flat=flat0,
             trainsize=trainsize0,
         )
         if tuple(sorted(params0.items())) in results:
