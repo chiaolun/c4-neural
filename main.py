@@ -66,7 +66,7 @@ def censor_data(ncensor, X_raw, y_raw):
         censor_test
     ) = train_test_split(
         X_all, y_all, censor,
-        train_size=100000, test_size=10000,
+        test_size=10000,
         random_state=42,
     )
     return X_train, X_test, y_train, y_test, censor_train, censor_test
