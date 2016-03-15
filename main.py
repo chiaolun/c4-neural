@@ -85,10 +85,10 @@ def linear_layers(n, flat):
         ) for i, n0 in enumerate(sizes[:-1])
     ]
 
-ncensors = [1, 3, 5]
+ncensors = [5]
 optimizers = ["adam"]
 activations = ["relu", "prelu"]
-nlayers = [1, 5, 10, 15, 20]
+nlayers = [5, 10]
 trainsizes = [1000000]
 flats = [True]
 
