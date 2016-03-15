@@ -2,6 +2,8 @@
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation, Dropout
+from keras.layers.advanced_activations import PReLU
+from keras.layers.normalization import BatchNormalization
 from keras.callbacks import EarlyStopping
 import numpy as np
 import itertools
@@ -36,9 +38,11 @@ def construct_model(layers, optimizer, activation):
     model = Sequential()
     for layer0 in layers:
         model.add(layer0)
-        model.add(Activation(activation))
-        # if dropout:
-        #     model.add(Dropout(dropout))
+        if activation == "prelu":
+            model.add(PReLU())
+        else:
+            model.add(Activation(activation))
+        model.add(BatchNormalization())
     model.add(Dense(3, init='lecun_uniform'))
     model.add(Activation('softmax'))
     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
@@ -82,11 +86,11 @@ def linear_layers(n, flat):
     ]
 
 ncensors = [1, 3, 5]
-optimizers = ["sgd", "adam"]
-activations = ["relu", "tanh"]
-nlayers = [1, 5, 10]
-trainsizes = [10000, 100000, 1000000]
-flats = [True, False]
+optimizers = ["adam"]
+activations = ["relu", "prelu"]
+nlayers = [1, 5, 10, 15, 20]
+trainsizes = [1000000]
+flats = [True]
 
 games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
 y_raw, X_raw = zip(*games)
@@ -120,6 +124,7 @@ for ncensor0 in ncensors:
         trainsizes
     ):
         params0 = dict(
+            batch_normalization=True,
             ncensor=ncensor0,
             optimizer=optimizer0,
             activation=activation0,
