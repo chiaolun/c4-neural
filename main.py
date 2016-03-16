@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from keras.models import Sequential
-from keras.layers.core import Dense, Activation, Flatten, Reshape
+from keras.layers.core import Dense, Activation, Flatten
 from keras.layers import Convolution2D
 import numpy as np
 
