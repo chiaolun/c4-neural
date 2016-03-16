@@ -10,6 +10,7 @@ import itertools
 from sklearn.cross_validation import train_test_split
 import cPickle
 import time
+import pandas as pd
 
 ncols = 7
 nrows = 6
@@ -156,3 +157,16 @@ for ncensor0 in ncensors:
         data0["time_taken"] = time.time() - start_time
         results[tuple(sorted(params0.items()))] = data0
         cPickle.dump(results, file("results.pickle", "w"))
+
+
+results2 = []
+for params0, history0 in results.items():
+    history1 = pd.DataFrame(history0)
+    for k, v in params0:
+        history1[k] = v
+    results2.append(history1.reset_index().rename(columns={"index": "epoch"}))
+
+results2 = pd.concat(results2, ignore_index=True)
+results2.flat = results2.flat * 1
+results2.batch_normalization = results2.batch_normalization.fillna(0) * 1
+results2.to_csv("results.csv", index=False)
