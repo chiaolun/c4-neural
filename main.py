@@ -29,27 +29,6 @@ def moves_to_state(moves):
     return state0
 
 
-def construct_model(nlayers):
-    model = Sequential()
-    for i in range(nlayers):
-        model.add(
-            Convolution2D(
-                32, 4, 4, border_mode="valid",
-                input_shape=(2, nrows, ncols) if i == 0 else None
-            )
-        )
-        model.add(Activation("relu"))
-    model.add(Flatten())
-    model.add(Dense(64, init='lecun_uniform'))
-    model.add(Activation('relu'))
-    model.add(Dense(1, init='lecun_uniform'))
-    model.add(Activation('sigmoid'))
-    model.compile(loss='binary_crossentropy',
-                  optimizer="adam",
-                  class_mode="binary")
-    return model
-
-
 def censor_data(ncensor, X_raw, y_raw):
     censor = np.random.randint(0, ncensor + 1, len(X_raw))
     X_all = np.array([
@@ -74,6 +53,27 @@ def censor_data(ncensor, X_raw, y_raw):
     return X_train, X_test, y_train, y_test, censor_train, censor_test
 
 
+def get_model():
+    model = Sequential()
+    model.add(
+        Convolution2D(
+            32, 4, 4, border_mode="valid",
+            input_shape=(2, nrows, ncols)
+        )
+    )
+    model.add(Activation("relu"))
+    model.add(Flatten())
+    model.add(Dense(8, init='lecun_uniform'))
+    model.add(Activation('relu'))
+    model.add(Dense(1, init='lecun_uniform'))
+    model.add(Activation('sigmoid'))
+    model.compile(loss='binary_crossentropy',
+                  optimizer="adam",
+                  class_mode="binary")
+    return model
+
+model = get_model()
+
 games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
 y_raw, X_raw = zip(*games)
 y_raw = np.array(y_raw)
@@ -87,11 +87,9 @@ y_raw = (y_raw == 1) * 1
     y_test,
     censor_train,
     censor_test
-) = censor_data(1, X_raw, y_raw)
+) = censor_data(4, X_raw, y_raw)
 
-model0 = construct_model(5)
-
-model0.fit(
+model.fit(
     X_train,
     y_train,
     batch_size=128,
