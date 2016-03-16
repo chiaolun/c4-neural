@@ -16,18 +16,41 @@ def parse_game(line0):
     return winner, moves
 
 
-def moves_to_states(moves, n=1):
+def moves_to_state(moves):
     state0 = np.zeros((2, nrows, ncols))
     top_cells = [0] * ncols
-    if len(moves) - n == -1:
-        yield state0
-        state0 = state0.copy()
+    state0 = state0.copy()
     for i, move0 in enumerate(moves):
         state0[i % 2, top_cells[move0], move0] = 1
         top_cells[move0] += 1
-        if i >= len(moves) - n:
+    return state0
+
+
+def moves_to_states(moves):
+    state0 = np.zeros((2, nrows, ncols))
+    top_cells = [0] * ncols
+    yield state0
+    state0 = state0.copy()
+    for i, move0 in enumerate(moves):
+        state0[i % 2, top_cells[move0], move0] = 1
+        top_cells[move0] += 1
+        if i < len(moves) - 1:
             yield state0
             state0 = state0.copy()
+    yield state0
+
+
+def rstates((winner0, moves0)):
+    states = list(moves_to_states(moves0))
+    if winner0 == 1:
+        reward = 1
+    elif winner0 == 0:
+        reward = 0.5
+    else:
+        reward = 0
+
+    for state0 in states:
+        yield reward, state0
 
 
 def get_model():
@@ -42,62 +65,28 @@ def get_model():
     model.add(Flatten())
     model.add(Dense(8, init='lecun_uniform'))
     model.add(Activation('relu'))
-    model.add(Dense(ncols, init='lecun_uniform'))
-    model.add(Activation('linear'))
-    model.compile(loss='mse', optimizer="adam")
+    model.add(Dense(1, init='lecun_uniform'))
+    model.add(Activation('sigmoid'))
+    model.compile(loss='binary_crossentropy',
+                  optimizer="adam",
+                  class_mode="binary")
     return model
 
 
-def sars((winner0, moves0)):
-    nmoves = len(moves0)
-    sample_move = -(np.random.randint(0, nmoves - 1) + 1)
-    col0 = moves0[sample_move - 1]
-    if sample_move == -1:
-        state0 = moves_to_states(moves0[:sample_move]).next()
-        state1 = None
-        if winner0 == 1:
-            reward = 1
-        elif winner0 == 0:
-            reward = 0.5
-        else:
-            reward = 0
-        return state0, col0, reward, state1
-    else:
-        state0, state1 = list(moves_to_states(moves0[:sample_move], 2))
-        reward = 0
-        return state0, col0, reward, state1
-
-
-def gen_batch(games, n):
-    sample_games = [games[i] for i in np.random.randint(len(games), size=n)]
-    return map(sars, sample_games)
+def rstate_batch(games, n):
+    results = []
+    while 1:
+        for game0 in games:
+            for line0 in rstates(game0):
+                results.append(line0)
+                if len(results) >= n:
+                    r, s = zip(*results)
+                    yield np.array(s), np.array(r)
+                    results = []
 
 games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
 
-alpha = 0.8
-
 model = get_model()
-for i in range(1000000):
-    state0s, actions, rewards, state1s = zip(*gen_batch(games, 10000))
-    state0s = np.array(state0s)
 
-    non_term_indices, non_term_states = zip(
-        *((i, state1)
-          for i, state1 in enumerate(state1s)
-          if state1 is not None)
-    )
-    non_term_indices = np.array(non_term_indices)
-    non_term_states = np.array(non_term_states)
-
-    Q1s = np.zeros(len(state1s))
-    Q1s[non_term_indices] = model.predict(non_term_states).max(axis=1)
-
-    Q0s = model.predict(np.array(state0s))
-
-    to_update = zip(*enumerate(actions))
-
-    Q0s[to_update] = np.array(rewards) + alpha * Q1s
-
-    print "Iter {0}, Error: {1[0]}".format(
-        i, model.train_on_batch(state0s, Q0s)
-    )
+for X, y in rstate_batch(games, 100000):
+    model.fit(X, y, nb_epoch=1, show_accuracy=True)
