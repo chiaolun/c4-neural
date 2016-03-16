@@ -16,6 +16,15 @@ def parse_game(line0):
     return winner, moves
 
 
+def moves_to_state(moves):
+    state0 = np.zeros((2, nrows, ncols))
+    top_cells = [0] * ncols
+    for i, move0 in enumerate(moves):
+        state0[i % 2, top_cells[move0], move0] = 1
+        top_cells[move0] += 1
+    return state0
+
+
 def moves_to_states(moves, n=1):
     state0 = np.zeros((2, nrows, ncols))
     top_cells = [0] * ncols
@@ -57,8 +66,8 @@ def sars((winner0, moves0)):
         state1 = None
         if winner0 == 1:
             reward = 1
-        elif winner0 == 0:
-            reward = 0.5
+        elif winner0 == 2:
+            reward = -1
         else:
             reward = 0
         return state0, col0, reward, state1
@@ -77,7 +86,7 @@ games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
 alpha = 0.8
 
 model = get_model()
-for i in range(1000000):
+for i in range(10000):
     state0s, actions, rewards, state1s = zip(*gen_batch(games, 10000))
     state0s = np.array(state0s)
 
@@ -89,8 +98,12 @@ for i in range(1000000):
     non_term_indices = np.array(non_term_indices)
     non_term_states = np.array(non_term_states)
 
+    oddeven = np.mod(non_term_states.sum(axis=(1, 2, 3)), 2)
+    Q1preds = model.predict(non_term_states)
+
     Q1s = np.zeros(len(state1s))
-    Q1s[non_term_indices] = model.predict(non_term_states).max(axis=1)
+    Q1s[non_term_indices[oddeven == 0]] = Q1preds[oddeven == 0].max(axis=1)
+    Q1s[non_term_indices[oddeven == 1]] = Q1preds[oddeven == 1].min(axis=1)
 
     Q0s = model.predict(np.array(state0s))
 
