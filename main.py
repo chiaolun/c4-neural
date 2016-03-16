@@ -6,11 +6,7 @@ from keras.layers.advanced_activations import PReLU
 from keras.layers.normalization import BatchNormalization
 from keras.callbacks import EarlyStopping
 import numpy as np
-import itertools
 from sklearn.cross_validation import train_test_split
-import cPickle
-import time
-import pandas as pd
 
 ncols = 7
 nrows = 6
@@ -43,7 +39,6 @@ def construct_model(layers, optimizer, activation):
             model.add(PReLU())
         else:
             model.add(Activation(activation))
-        model.add(BatchNormalization())
     model.add(Dense(3, init='lecun_uniform'))
     model.add(Activation('softmax'))
     model.compile(loss='categorical_crossentropy', optimizer=optimizer)
@@ -73,11 +68,8 @@ def censor_data(ncensor, X_raw, y_raw):
     return X_train, X_test, y_train, y_test, censor_train, censor_test
 
 
-def linear_layers(n, flat):
-    if flat:
-        sizes = [state_dim * 2 for _ in range(n + 1)]
-    else:
-        sizes = np.linspace(state_dim * 2, 3, n + 1).round().astype("int")
+def linear_layers(n):
+    sizes = np.linspace(state_dim * 2, 3, n + 1).round().astype("int")
     return [
         Dense(
             output_dim=n0,
@@ -86,87 +78,30 @@ def linear_layers(n, flat):
         ) for i, n0 in enumerate(sizes[:-1])
     ]
 
-ncensors = [5]
-optimizers = ["adam"]
-activations = ["relu", "prelu"]
-nlayers = [5, 10]
-trainsizes = [1000000]
-flats = [True]
-
 games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
 y_raw, X_raw = zip(*games)
 y_raw = np.array(y_raw)
 
-try:
-    results = cPickle.load(file("results.pickle"))
-except:
-    results = {}
-
-for ncensor0 in ncensors:
-    (
-        X_train,
-        X_test,
-        y_train,
-        y_test,
-        censor_train,
-        censor_test
-    ) = censor_data(ncensor0, X_raw, y_raw)
-    for (
-            optimizer0,
-            activation0,
-            nlayer0,
-            flat0,
-            trainsize0
-    ) in itertools.product(
-        optimizers,
-        activations,
-        nlayers,
-        flats,
-        trainsizes
-    ):
-        params0 = dict(
-            batch_normalization=True,
-            ncensor=ncensor0,
-            optimizer=optimizer0,
-            activation=activation0,
-            nlayer=nlayer0,
-            flat=flat0,
-            trainsize=trainsize0,
-        )
-        if tuple(sorted(params0.items())) in results:
-            print "Skipping params {}".format(params0)
-            continue
-        print "Testing params {}".format(params0)
-
-        layers = linear_layers(nlayer0, flat=flat0)
-        model0 = construct_model(
-            layers,
-            optimizer=optimizer0,
-            activation=activation0,
-        )
-        start_time = time.time()
-        data0 = model0.fit(
-            X_train[:trainsize0],
-            y_train[:trainsize0],
-            batch_size=128,
-            nb_epoch=10000000 // trainsize0,
-            validation_data=(X_test, y_test),
-            show_accuracy=True,
-            callbacks=[EarlyStopping(patience=10)],
-        ).history
-        data0["time_taken"] = time.time() - start_time
-        results[tuple(sorted(params0.items()))] = data0
-        cPickle.dump(results, file("results.pickle", "w"))
-
-
-results2 = []
-for params0, history0 in results.items():
-    history1 = pd.DataFrame(history0)
-    for k, v in params0:
-        history1[k] = v
-    results2.append(history1.reset_index().rename(columns={"index": "epoch"}))
-
-results2 = pd.concat(results2, ignore_index=True)
-results2.flat = results2.flat * 1
-results2.batch_normalization = results2.batch_normalization.fillna(0) * 1
-results2.to_csv("results.csv", index=False)
+(
+    X_train,
+    X_test,
+    y_train,
+    y_test,
+    censor_train,
+    censor_test
+) = censor_data(3, X_raw, y_raw)
+layers = linear_layers(5)
+model0 = construct_model(
+    layers,
+    optimizer="adam",
+    activation="relu",
+)
+model0.fit(
+    X_train,
+    y_train,
+    batch_size=128,
+    nb_epoch=100,
+    validation_data=(X_test, y_test),
+    show_accuracy=True,
+    callbacks=[EarlyStopping(patience=10)],
+)
