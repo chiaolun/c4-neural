@@ -106,12 +106,9 @@ def compile_trainer(network):
     Q1 = lasagne.layers.get_output(network, inputs=state1)
     # Usual form of the recursion:
     # Q0[action] == reward + alpha * max(Q1) + error
-    # We use minimax logic that flips the score for player1 and
-    # player2 so this ends up being
-    # Q0[action] == reward - alpha * max(Q1) + error
 
     terminal = T.eq(state1[:, 0].sum(axis=(1, 2)), 0)
-    error = (Q0[:, action] - reward +
+    error = (Q0[:, action] - reward -
              T.switch(terminal, 0., alpha * Q1.max(axis=1)))
     error = (error**2).mean()
 
