@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 from keras.models import Sequential
-from keras.layers.core import Dense, Activation, Dropout
+from keras.layers.core import Dense, Activation
 from keras.layers.advanced_activations import PReLU
-from keras.layers.normalization import BatchNormalization
 from keras.callbacks import EarlyStopping
 import numpy as np
 from sklearn.cross_validation import train_test_split
@@ -100,7 +99,7 @@ model0.fit(
     X_train,
     y_train,
     batch_size=128,
-    nb_epoch=100,
+    nb_epoch=5,
     validation_data=(X_test, y_test),
     show_accuracy=True,
     callbacks=[EarlyStopping(patience=10)],
