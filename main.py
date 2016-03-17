@@ -2,12 +2,9 @@
 
 import numpy as np
 from sklearn.cross_validation import train_test_split
-
 import time
-
 import theano
 import theano.tensor as T
-
 import lasagne
 
 # Code copied from lasagne:
