@@ -107,7 +107,7 @@ def compile_trainer(network):
     # Usual form of the recursion:
     # Q0[action] == reward + alpha * max(Q1) + error
 
-    terminal = T.eq(state1[:, 0].sum(axis=(1, 2)), 0)
+    terminal = T.eq(state1.sum(axis=(1, 2, 3)), 0)
     error = (Q0[:, action] - reward -
              T.switch(terminal, 0., alpha * Q1.max(axis=1)))
     error = (error**2).mean()
