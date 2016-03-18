@@ -180,7 +180,7 @@ def main(num_epochs=100):
             train_batches += 1
 
         # Save coefficients
-        np.savez("network.dat", *lasagne.layers.get_all_param_values(network))
+        np.savez("network", *lasagne.layers.get_all_param_values(network))
 
         # Then we print the results for this epoch:
         print("Epoch {} of {} took {:.3f}s".format(
