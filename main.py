@@ -139,36 +139,52 @@ def compile_trainer(network):
     return train_fn
 
 
-games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
+def main(num_epochs=100):
+    games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
 
-network = get_network()
-Q_fn = compile_Q(network)
-train_fn = compile_trainer(network)
+    network = get_network()
 
-# Finally, launch the training loop.
-print("Starting training...")
+    try:
+        with np.load("network.npz") as saved_coefs:
+            lasagne.layers.set_all_param_values(
+                network,
+                [saved_coefs[k] for k in sorted(saved_coefs)]
+            )
+    except IOError:
+        pass
 
-num_epochs = 100
-# We iterate over epochs:
-for epoch in range(num_epochs):
-    start_time = time.time()
-    state0s, actions, rewards, state1s = zip(*gen_batch(games, 100000))
-    state0s = np.array(state0s)
-    actions = np.array(actions, dtype="int8")
-    rewards = np.array(rewards, dtype="float32")
-    state1s = np.array(state1s)
+    Q_fn = compile_Q(network)
+    train_fn = compile_trainer(network)
 
-    # In each epoch, we do a full pass over the training data:
-    train_err = 0
-    train_batches = 0
-    for batch in iterate_minibatches(
-            state0s, actions, rewards, state1s,
-            batchsize=500, shuffle=True,
-    ):
-        train_err += train_fn(*(batch + (0.9,)))
-        train_batches += 1
+    # Finally, launch the training loop.
+    print("Starting training...")
 
-    # Then we print the results for this epoch:
-    print("Epoch {} of {} took {:.3f}s".format(
-        epoch + 1, num_epochs, time.time() - start_time))
-    print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+    num_epochs = 100
+    # We iterate over epochs:
+    for epoch in range(num_epochs):
+        start_time = time.time()
+        state0s, actions, rewards, state1s = zip(*gen_batch(games, 100000))
+        state0s = np.array(state0s)
+        actions = np.array(actions, dtype="int8")
+        rewards = np.array(rewards, dtype="float32")
+        state1s = np.array(state1s)
+
+        # In each epoch, we do a full pass over the training data:
+        train_err = 0
+        train_batches = 0
+        for batch in iterate_minibatches(
+                state0s, actions, rewards, state1s,
+                batchsize=500, shuffle=True,
+        ):
+            train_err += train_fn(*(batch + (0.9,)))
+            train_batches += 1
+
+        # Save coefficients
+        np.savez("network.dat", *lasagne.layers.get_all_param_values(network))
+
+        # Then we print the results for this epoch:
+        print("Epoch {} of {} took {:.3f}s".format(
+            epoch + 1, num_epochs, time.time() - start_time))
+        print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+
+main(100)
