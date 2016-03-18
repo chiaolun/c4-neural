@@ -11,7 +11,6 @@ import lasagne
 
 ncols = 7
 nrows = 6
-alpha = 0.9
 
 
 def parse_game(line0):
@@ -95,6 +94,7 @@ def compile_Q(network):
 
 def compile_trainer(network):
     # Prepare Theano variables for inputs and targets
+    alpha = T.scalar("alpha")
     state0 = T.tensor4('state0')
     action = T.bvector('action')
     reward = T.vector('reward')
@@ -107,10 +107,12 @@ def compile_trainer(network):
 
     # Q0[action] == reward + alpha * max(Q1) + error
     terminal = T.eq(state1.sum(axis=(1, 2, 3)), 0)
-    error_vec = (T.extra_ops.to_one_hot(action, ncols)
-                 .dot(Q0.T).sum(axis=1) -
-                 reward -
-                 T.switch(terminal, 0., alpha * Q1.max(axis=1)))
+    error_vec = (
+        T.extra_ops.to_one_hot(action, ncols)
+        .dot(Q0.T).sum(axis=1) -
+        reward -
+        T.switch(terminal, 0., alpha * Q1.max(axis=1))
+    )
     error = (error_vec**2).mean()
 
     # Create update expressions for training, i.e., how to modify the
@@ -122,7 +124,7 @@ def compile_trainer(network):
     # (by giving the updates dictionary) and returning the
     # corresponding training loss:
     train_fn = theano.function(
-        [state0, action, reward, state1],
+        [state0, action, reward, state1, alpha],
         error, updates=updates,
         on_unused_input='warn')
 
@@ -155,7 +157,7 @@ for epoch in range(num_epochs):
             state0s, actions, rewards, state1s,
             batchsize=500, shuffle=True,
     ):
-        train_err += train_fn(*batch)
+        train_err += train_fn(*(batch + (0.9,)))
         train_batches += 1
 
     # Then we print the results for this epoch:
