@@ -78,10 +78,13 @@ def get_network():
         shape=(None, 2, nrows, ncols)
     )
     network = lasagne.layers.Conv2DLayer(
-        network, 32, (4, 4),
+        network, 64, (3, 3),
+    )
+    network = lasagne.layers.Conv2DLayer(
+        network, 64, (3, 3),
     )
     network = lasagne.layers.DenseLayer(
-        network, num_units=8,
+        network, num_units=128,
         nonlinearity=lasagne.nonlinearities.rectify,
         W=lasagne.init.GlorotUniform()
     )
