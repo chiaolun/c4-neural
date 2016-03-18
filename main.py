@@ -37,14 +37,15 @@ def sars((winner0, moves0)):
     col0 = moves0[sample_move]
     state0 = moves_to_state(moves0[:sample_move])
     side0 = state0.sum() % 2
+    flip0 = 1 - 2 * side0
     moves0 = moves0[sample_move:]
     if len(moves0) == 2:
-        return state0[::1 - 2 * side0], col0, 1, no_state
+        return state0[::flip0], col0, 1, no_state
     elif len(moves0) == 1:
-        return state0[::1 - 2 * side0], col0, -1, no_state
+        return state0[::flip0], col0, -1, no_state
     else:
         state1 = moves_to_state(moves0[:2], state0)
-        return state0[::1 - 2 * side0], col0, 0, state1[::1 - 2 * side0]
+        return state0[::flip0], col0, 0, state1[::flip0]
 
 
 def gen_batch(games, n):
@@ -71,7 +72,7 @@ def get_network():
         shape=(None, 2, nrows, ncols)
     )
     network = lasagne.layers.Conv2DLayer(
-        network, 32, 4,
+        network, 32, (4, 4),
     )
     network = lasagne.layers.DenseLayer(
         network, num_units=8,
@@ -108,10 +109,16 @@ def compile_trainer(network):
     # Q0[action] == reward + alpha * max(Q1) + error
     terminal = T.eq(state1.sum(axis=(1, 2, 3)), 0)
     error_vec = (
-        T.extra_ops.to_one_hot(action, ncols)
-        .dot(Q0.T).sum(axis=1) -
+        (
+            Q0 *
+            T.extra_ops.to_one_hot(action, ncols)
+        ).sum(axis=1) -
         reward -
-        T.switch(terminal, 0., alpha * Q1.max(axis=1))
+        T.switch(
+            terminal,
+            0.,
+            alpha * Q1.max(axis=1)
+        )
     )
     error = (error_vec**2).mean()
 
@@ -125,7 +132,8 @@ def compile_trainer(network):
     # corresponding training loss:
     train_fn = theano.function(
         [state0, action, reward, state1, alpha],
-        error, updates=updates,
+        error,
+        updates=updates,
         on_unused_input='warn')
 
     return train_fn
