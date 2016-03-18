@@ -104,13 +104,14 @@ def compile_trainer(network):
     # we want to minimize
     Q0 = lasagne.layers.get_output(network, inputs=state0)
     Q1 = lasagne.layers.get_output(network, inputs=state1)
-    # Usual form of the recursion:
-    # Q0[action] == reward + alpha * max(Q1) + error
 
+    # Q0[action] == reward + alpha * max(Q1) + error
     terminal = T.eq(state1.sum(axis=(1, 2, 3)), 0)
-    error = (Q0[:, action] - reward -
-             T.switch(terminal, 0., alpha * Q1.max(axis=1)))
-    error = (error**2).mean()
+    error_vec = (T.extra_ops.to_one_hot(action, ncols)
+                 .dot(Q0.T).sum(axis=1) -
+                 reward -
+                 T.switch(terminal, 0., alpha * Q1.max(axis=1)))
+    error = (error_vec**2).mean()
 
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step.
@@ -122,7 +123,8 @@ def compile_trainer(network):
     # corresponding training loss:
     train_fn = theano.function(
         [state0, action, reward, state1],
-        error, updates=updates)
+        error, updates=updates,
+        on_unused_input='warn')
 
     return train_fn
 
@@ -139,6 +141,7 @@ print("Starting training...")
 num_epochs = 100
 # We iterate over epochs:
 for epoch in range(num_epochs):
+    start_time = time.time()
     state0s, actions, rewards, state1s = zip(*gen_batch(games, 100000))
     state0s = np.array(state0s)
     actions = np.array(actions, dtype="int8")
@@ -148,7 +151,6 @@ for epoch in range(num_epochs):
     # In each epoch, we do a full pass over the training data:
     train_err = 0
     train_batches = 0
-    start_time = time.time()
     for batch in iterate_minibatches(
             state0s, actions, rewards, state1s,
             batchsize=500, shuffle=True,
