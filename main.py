@@ -99,26 +99,20 @@ def compile_trainer(network):
     state0 = T.tensor4('state0')
     action = T.bvector('action')
     reward = T.vector('reward')
-    state1 = T.tensor4('state1')
+    Q1max = T.vector("Q1max")
 
     # Create a loss expression for training, i.e., a scalar objective
     # we want to minimize
     Q0 = lasagne.layers.get_output(network, inputs=state0)
-    Q1 = lasagne.layers.get_output(network, inputs=state1)
+    # Q1 = lasagne.layers.get_output(network, inputs=state1)
 
     # Q0[action] == reward + alpha * max(Q1) + error
-    terminal = T.eq(state1.sum(axis=(1, 2, 3)), 0)
     error_vec = (
         (
             Q0 *
             T.extra_ops.to_one_hot(action, ncols)
         ).sum(axis=1) -
-        reward -
-        T.switch(
-            terminal,
-            0.,
-            alpha * Q1.max(axis=1)
-        )
+        reward - alpha * Q1max
     )
     error = (error_vec**2).mean()
 
@@ -131,7 +125,7 @@ def compile_trainer(network):
     # (by giving the updates dictionary) and returning the
     # corresponding training loss:
     train_fn = theano.function(
-        [state0, action, reward, state1, alpha],
+        [state0, action, reward, Q1max, alpha],
         error,
         updates=updates,
         on_unused_input='warn')
@@ -172,11 +166,24 @@ def main(num_epochs=100):
         # In each epoch, we do a full pass over the training data:
         train_err = 0
         train_batches = 0
-        for batch in iterate_minibatches(
+        for (
+                state0s_batch,
+                actions_batch,
+                rewards_batch,
+                state1s_batch
+        ) in iterate_minibatches(
                 state0s, actions, rewards, state1s,
                 batchsize=500, shuffle=True,
         ):
-            train_err += train_fn(*(batch + (0.9,)))
+            Q1max = Q_fn(state1s_batch).max(axis=1)
+            Q1max[state1s_batch.sum(axis=(1, 2, 3)) == 0] = 0.
+            train_err += train_fn(
+                state0s_batch,
+                actions_batch,
+                rewards_batch,
+                Q1max,
+                0.9
+            )
             train_batches += 1
 
         # Save coefficients
