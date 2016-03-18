@@ -139,6 +139,10 @@ def compile_trainer(network):
     return train_fn
 
 
+def save_network(network):
+    np.savez("network", *lasagne.layers.get_all_param_values(network))
+
+
 def load_network():
     network = get_network()
 
@@ -221,7 +225,7 @@ def main(num_epochs=100):
             train_batches += 1
 
         # Save coefficients
-        np.savez("network", *lasagne.layers.get_all_param_values(network))
+        save_network(network)
 
         # Then we print the results for this epoch:
         print("Epoch {} of {} took {:.3f}s".format(
