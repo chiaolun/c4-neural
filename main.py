@@ -148,7 +148,8 @@ def main(num_epochs=100):
         with np.load("network.npz") as saved_coefs:
             lasagne.layers.set_all_param_values(
                 network,
-                [saved_coefs[k] for k in sorted(saved_coefs)]
+                [saved_coefs[k].astype(theano.config.floatX)
+                 for k in sorted(saved_coefs)]
             )
     except IOError:
         pass
