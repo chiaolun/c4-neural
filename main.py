@@ -139,9 +139,7 @@ def compile_trainer(network):
     return train_fn
 
 
-def main(num_epochs=100):
-    games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
-
+def load_network():
     network = get_network()
 
     try:
@@ -153,6 +151,13 @@ def main(num_epochs=100):
             )
     except IOError:
         pass
+
+    return network
+
+def main(num_epochs=100):
+    games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
+
+    network = load_network()
 
     Q_fn = compile_Q(network)
     train_fn = compile_trainer(network)
@@ -203,5 +208,5 @@ def main(num_epochs=100):
 
 # Q_fn(np.array([flip_state(moves_to_state([3,3,3,2,2,2]))])).argmax()
 
-
-main(100)
+if __name__ == "__main__":
+    main(100)
