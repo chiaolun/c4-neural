@@ -154,13 +154,38 @@ def load_network():
 
     return network
 
+
+class network_trainer():
+
+    def __init__(self, network):
+        self.Q_fn = compile_Q(network)
+        self.train_fn = compile_trainer(network)
+
+    def train(
+            self,
+            state0s_batch,
+            actions_batch,
+            rewards_batch,
+            state1s_batch,
+            alpha,
+    ):
+        Q1max = self.Q_fn(state1s_batch).max(axis=1)
+        Q1max[state1s_batch.sum(axis=(1, 2, 3)) == 0] = 0.
+        return self.train_fn(
+            state0s_batch,
+            actions_batch,
+            rewards_batch,
+            Q1max,
+            alpha,
+        )
+
+
 def main(num_epochs=100):
     games = [parse_game(line0) for line0 in file("RvR.txt").readlines()]
 
     network = load_network()
 
-    Q_fn = compile_Q(network)
-    train_fn = compile_trainer(network)
+    trainer = network_trainer(network)
 
     # Finally, launch the training loop.
     print("Starting training...")
@@ -181,18 +206,16 @@ def main(num_epochs=100):
                 state0s_batch,
                 actions_batch,
                 rewards_batch,
-                state1s_batch
+                state1s_batch,
         ) in iterate_minibatches(
                 state0s, actions, rewards, state1s,
                 batchsize=500, shuffle=True,
         ):
-            Q1max = Q_fn(state1s_batch).max(axis=1)
-            Q1max[state1s_batch.sum(axis=(1, 2, 3)) == 0] = 0.
-            train_err += train_fn(
+            train_err += trainer.train(
                 state0s_batch,
                 actions_batch,
                 rewards_batch,
-                Q1max,
+                state1s_batch,
                 0.9
             )
             train_batches += 1
