@@ -31,6 +31,12 @@ def moves_to_state(moves, state0=np.zeros((2, nrows, ncols), dtype="int8")):
     return state0
 
 
+def flip_state(state0):
+    side0 = state0.sum() % 2
+    flip0 = 1 - 2 * side0
+    return state0[::flip0]
+
+
 def sars((winner0, moves0)):
     no_state = np.zeros((2, nrows, ncols))
     sample_move = np.random.randint(0, len(moves0))
@@ -193,5 +199,9 @@ def main(num_epochs=100):
         print("Epoch {} of {} took {:.3f}s".format(
             epoch + 1, num_epochs, time.time() - start_time))
         print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+
+
+# Q_fn(np.array([flip_state(moves_to_state([3,3,3,2,2,2]))])).argmax()
+
 
 main(100)
