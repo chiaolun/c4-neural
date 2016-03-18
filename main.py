@@ -160,7 +160,6 @@ def main(num_epochs=100):
     # Finally, launch the training loop.
     print("Starting training...")
 
-    num_epochs = 100
     # We iterate over epochs:
     for epoch in range(num_epochs):
         start_time = time.time()
