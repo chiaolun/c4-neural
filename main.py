@@ -165,10 +165,10 @@ def main(num_epochs=100):
     for epoch in range(num_epochs):
         start_time = time.time()
         state0s, actions, rewards, state1s = zip(*gen_batch(games, 100000))
-        state0s = np.array(state0s)
+        state0s = np.array(state0s, dtype=theano.config.floatX)
         actions = np.array(actions, dtype="int8")
-        rewards = np.array(rewards, dtype="float32")
-        state1s = np.array(state1s)
+        rewards = np.array(rewards, dtype=theano.config.floatX)
+        state1s = np.array(state1s, dtype=theano.config.floatX)
 
         # In each epoch, we do a full pass over the training data:
         train_err = 0
