@@ -120,10 +120,9 @@ def compile_trainer(network):
         (
             Q0 *
             T.extra_ops.to_one_hot(action, ncols)
-        ).sum(axis=1) -
-        reward - alpha * Q1max
+        ).sum(axis=1) - reward - alpha * Q1max
     )
-    error = (error_vec**2).mean()
+    error = (error_vec ** 2).mean()
 
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step.
