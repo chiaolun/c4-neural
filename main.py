@@ -20,12 +20,12 @@ def parse_game(line0):
     return winner, moves
 
 
-def moves_to_state(moves, state0=np.zeros((2, nrows, ncols), dtype="int8")):
+def moves_to_state(moves, state0=np.zeros((2, ncols, nrows), dtype="int8")):
     state0 = state0.copy()
-    top_cells = state0.max(axis=0).argmin(axis=0)
+    top_cells = state0.max(axis=0).argmin(axis=1)
     side = top_cells.sum() % 2
     for move0 in moves:
-        state0[side, top_cells[move0], move0] = 1
+        state0[side, move0, top_cells[move0]] = 1
         top_cells[move0] += 1
         side = 1 - side
     return state0
@@ -38,7 +38,7 @@ def flip_state(state0):
 
 
 def sars((winner0, moves0)):
-    no_state = np.zeros((2, nrows, ncols))
+    no_state = np.zeros((2, ncols, nrows))
     sample_move = np.random.randint(0, len(moves0))
     col0 = moves0[sample_move]
     state0 = moves_to_state(moves0[:sample_move])
@@ -75,7 +75,7 @@ def iterate_minibatches(*arrays, **options):
 
 def get_network():
     network = lasagne.layers.InputLayer(
-        shape=(None, 2, nrows, ncols)
+        shape=(None, 2, ncols, nrows)
     )
     network = lasagne.layers.Conv2DLayer(
         network, 64, (3, 3),
@@ -89,8 +89,11 @@ def get_network():
         W=lasagne.init.GlorotUniform()
     )
     network = lasagne.layers.DenseLayer(
-        network, num_units=ncols,
+        network, num_units=ncols * nrows,
         nonlinearity=None,
+    )
+    network = lasagne.layers.ReshapeLayer(
+        network, (-1, ncols, nrows)
     )
     return network
 
@@ -98,7 +101,14 @@ def get_network():
 def compile_Q(network):
     state = T.tensor4('state')
     Q = lasagne.layers.get_output(network, inputs=state)
-    Q_fn = theano.function([state], Q)
+    t_fn = theano.function([state], Q)
+
+    def Q_fn(state):
+        Qs = t_fn(state)
+        rows = state.max(axis=1).argmin(axis=2)
+        ii = np.indices(Qs.shape[:2])
+        return Qs[ii[0], ii[1], rows]
+
     return Q_fn
 
 
@@ -116,12 +126,15 @@ def compile_trainer(network):
     # Q1 = lasagne.layers.get_output(network, inputs=state1)
 
     # Q0[action] == reward + alpha * max(Q1) + error
-    error_vec = (
-        (
-            Q0 *
-            T.extra_ops.to_one_hot(action, ncols)
-        ).sum(axis=1) - reward - alpha * Q1max
-    )
+    row = state0.max(axis=1)[
+        T.arange(state0.shape[0]),
+        action
+    ].argmin(axis=1)
+    error_vec = Q0[
+        T.arange(Q0.shape[0]),
+        action,
+        row
+    ] - reward - alpha * Q1max
     error = (error_vec ** 2).mean()
 
     # Create update expressions for training, i.e., how to modify the
