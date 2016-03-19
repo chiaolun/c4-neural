@@ -78,13 +78,13 @@ def get_network():
         shape=(None, 2, ncols, nrows)
     )
     network = lasagne.layers.Conv2DLayer(
-        network, 64, (3, 3),
+        network, 8, (2, 2),
     )
     network = lasagne.layers.Conv2DLayer(
-        network, 64, (3, 3),
+        network, 8, (2, 2),
     )
     network = lasagne.layers.DenseLayer(
-        network, num_units=128,
+        network, num_units=84,
         nonlinearity=lasagne.nonlinearities.rectify,
         W=lasagne.init.GlorotUniform()
     )
@@ -212,7 +212,7 @@ def main(num_epochs=100):
     # We iterate over epochs:
     for epoch in range(num_epochs):
         start_time = time.time()
-        state0s, actions, rewards, state1s = zip(*gen_batch(games, 100000))
+        state0s, actions, rewards, state1s = zip(*gen_batch(games, 10000))
         state0s = np.array(state0s, dtype=theano.config.floatX)
         actions = np.array(actions, dtype="int8")
         rewards = np.array(rewards, dtype=theano.config.floatX)
