@@ -108,12 +108,17 @@ def compile_trainer(network):
     state0 = T.tensor4('state0')
     action = T.bvector('action')
     reward = T.vector('reward')
+    # state1 = T.tensor4('state1')
     Q1max = T.vector("Q1max")
 
     # Create a loss expression for training, i.e., a scalar objective
     # we want to minimize
     Q0 = lasagne.layers.get_output(network, inputs=state0)
     # Q1 = lasagne.layers.get_output(network, inputs=state1)
+    # Q1max = T.switch(
+    #     T.eq(state1.sum(axis=(1, 2, 3)), 0.9),
+    #     0., Q1.max(axis=1)
+    # )
 
     # Q0[action] == reward + alpha * max(Q1) + error
     error_vec = (
