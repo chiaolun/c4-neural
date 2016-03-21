@@ -124,12 +124,12 @@ def compile_trainer(network):
     alpha = T.scalar("alpha")
     state0 = T.tensor4('state0')
     reward = T.vector('reward')
-    state1 = T.tensor4('state1')
+    Q1 = T.vector('state1')
 
     # Create a loss expression for training, i.e., a scalar objective
     # we want to minimize
     Q0 = lasagne.layers.get_output(network, inputs=state0).flatten()
-    Q1 = lasagne.layers.get_output(network, inputs=state1).flatten()
+    # Q1 = lasagne.layers.get_output(network, inputs=state1).flatten()
 
     error_vec = (
         Q0 - reward - alpha * Q1
@@ -145,7 +145,7 @@ def compile_trainer(network):
     # (by giving the updates dictionary) and returning the
     # corresponding training loss:
     train_fn = theano.function(
-        [state0, reward, state1, alpha],
+        [state0, reward, Q1, alpha],
         error,
         updates=updates,
         on_unused_input='warn')
@@ -176,6 +176,9 @@ def load_network():
 class network_trainer():
 
     def __init__(self, network):
+        state = T.tensor4('state')
+        Q = lasagne.layers.get_output(network, inputs=state)
+        self.t_fn = theano.function([state], Q)
         self.train_fn = compile_trainer(network)
 
     def train(
@@ -185,10 +188,11 @@ class network_trainer():
             state1s_batch,
             alpha,
     ):
+        Q1_batch = self.t_fn(state1s_batch).flatten()
         return self.train_fn(
             state0s_batch,
             rewards_batch,
-            state1s_batch,
+            Q1_batch,
             alpha,
         )
 
