@@ -21,6 +21,8 @@ def parse_game(line0):
 
 
 def moves_to_state(moves, state0=np.zeros((2, nrows, ncols), dtype="int8")):
+    if state0 is None:
+        return None
     state0 = state0.copy()
     top_cells = state0.max(axis=0).argmin(axis=0)
     side = top_cells.sum() % 2
@@ -105,15 +107,16 @@ def compile_Q(network):
                 moves_to_state([i], state0)
                 for i in range(ncols)
             ]
-            idx, non_zeros = zip(*[
+            Qs = np.empty(ncols)
+            Qs.fill(np.nan)
+            non_zeros = zip(*[
                 (i, state1)
                 for i, state1 in enumerate(state1s)
                 if state1 is not None
             ])
-            Qs = np.empty(ncols)
-            Qs.fill(np.nan)
-            Qs.flat[np.array(idx)] = t_fn(np.array(non_zeros))
-            Qs *= get_side(state0)
+            if len(non_zeros) > 0:
+                Qs.flat[list(non_zeros[0])] = t_fn(np.array(non_zeros[1]))
+                Qs *= get_side(state0)
             Qss.append(Qs)
         return np.array(Qss)
     return Q_fn
