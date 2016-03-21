@@ -33,26 +33,23 @@ def moves_to_state(moves, state0=np.zeros((2, nrows, ncols), dtype="int8")):
     return state0
 
 
-def flip_state(state0):
-    side0 = state0.sum() % 2
-    flip0 = 1 - 2 * side0
-    return state0[::flip0]
+def get_side(state0):
+    return 1 - 2 * (state0.sum() % 2)
 
 
 def srs((winner0, moves0)):
     no_state = np.zeros((2, nrows, ncols))
     sample_move = np.random.randint(0, len(moves0))
     state0 = moves_to_state(moves0[:sample_move])
-    side0 = state0.sum() % 2
-    flip0 = 1 - 2 * side0
+    side0 = get_side(state0)
     moves0 = moves0[sample_move:]
     if len(moves0) == 2:
-        return state0[::flip0], 1, no_state
+        return state0, side0, no_state
     elif len(moves0) == 1:
-        return state0[::flip0], -1, no_state
+        return state0, -side0, no_state
     else:
         state1 = moves_to_state(moves0[:2], state0)
-        return state0[::flip0], 0, state1[::flip0]
+        return state0, 0., state1
 
 
 def gen_batch(games, n):
@@ -116,6 +113,7 @@ def compile_Q(network):
             Qs = np.empty(ncols)
             Qs.fill(np.nan)
             Qs.flat[np.array(idx)] = t_fn(np.array(non_zeros))
+            Qs *= - get_side(state0)
             Qss.append(Qs)
         return np.array(Qss)
     return Q_fn
@@ -208,7 +206,7 @@ def main(num_epochs=100):
     # We iterate over epochs:
     for epoch in range(num_epochs):
         start_time = time.time()
-        state0s, rewards, state1s = zip(*gen_batch(games, 100000))
+        state0s, rewards, state1s = zip(*gen_batch(games, 10000))
         state0s = np.array(state0s, dtype=theano.config.floatX)
         rewards = np.array(rewards, dtype=theano.config.floatX)
         state1s = np.array(state1s, dtype=theano.config.floatX)
