@@ -44,9 +44,9 @@ def srs((winner0, moves0)):
     side0 = get_side(state0)
     moves0 = moves0[sample_move:]
     if len(moves0) == 2:
-        return state0, side0, no_state
-    elif len(moves0) == 1:
         return state0, -side0, no_state
+    elif len(moves0) == 1:
+        return state0, side0, no_state
     else:
         state1 = moves_to_state(moves0[:2], state0)
         return state0, 0., state1
@@ -113,7 +113,7 @@ def compile_Q(network):
             Qs = np.empty(ncols)
             Qs.fill(np.nan)
             Qs.flat[np.array(idx)] = t_fn(np.array(non_zeros))
-            Qs *= - get_side(state0)
+            Qs *= get_side(state0)
             Qss.append(Qs)
         return np.array(Qss)
     return Q_fn
