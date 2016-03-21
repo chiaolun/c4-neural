@@ -24,7 +24,10 @@ def moves_to_state(moves, state0=np.zeros((2, nrows, ncols), dtype="int8")):
     if state0 is None:
         return None
     state0 = state0.copy()
-    top_cells = state0.max(axis=0).argmin(axis=0)
+    top_cells = np.vstack(
+        [state0.max(axis=0),
+         np.zeros(ncols)]
+    ).argmin(axis=0)
     side = top_cells.sum() % 2
     for move0 in moves:
         if top_cells[move0] == nrows:
